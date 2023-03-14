@@ -7,6 +7,7 @@ import (
 
 	configv1 "github.com/openshift/api/config/v1"
 	osinv1 "github.com/openshift/api/osin/v1"
+	componentbaseconfigv1alpha1 "k8s.io/component-base/config/v1alpha1"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -204,6 +205,9 @@ type KubeControllerManagerConfig struct {
 
 	// extendedArguments is used to configure the kube-controller-manager
 	ExtendedArguments map[string]Arguments `json:"extendedArguments"`
+
+	// LeaderElection defines the configuration of leader election client.
+	LeaderElection componentbaseconfigv1alpha1.LeaderElectionConfiguration `json:"leaderElection"`
 }
 
 type KubeControllerManagerProjectConfig struct {

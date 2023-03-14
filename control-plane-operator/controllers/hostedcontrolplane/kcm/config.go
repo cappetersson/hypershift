@@ -4,9 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"path"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	componentbasev1 "k8s.io/component-base/config/v1alpha1"
+	"k8s.io/utils/pointer"
 
 	kcpv1 "github.com/openshift/api/kubecontrolplane/v1"
 
@@ -33,6 +36,14 @@ func ReconcileConfig(config, serviceServingCA *corev1.ConfigMap, ownerRef config
 }
 
 func generateConfig(serviceServingCA *corev1.ConfigMap) (string, error) {
+	renewDeadline, err := time.ParseDuration("12s")
+	if err != nil {
+		return "", err
+	}
+	retryPeriod, err := time.ParseDuration("3s")
+	if err != nil {
+		return "", err
+	}
 	var serviceServingCAPath string
 	if serviceServingCA != nil {
 		serviceServingCAPath = path.Join(serviceServingCAMount.Path(kcmContainerMain().Name, kcmVolumeServiceServingCA().Name), ServiceServingCAKey)
@@ -45,6 +56,11 @@ func generateConfig(serviceServingCA *corev1.ConfigMap) (string, error) {
 		ExtendedArguments: map[string]kcpv1.Arguments{},
 		ServiceServingCert: kcpv1.ServiceServingCert{
 			CertFile: serviceServingCAPath,
+		},
+		LeaderElection: componentbasev1.LeaderElectionConfiguration{
+			LeaderElect:   pointer.BoolPtr(true),
+			RenewDeadline: metav1.Duration{Duration: renewDeadline},
+			RetryPeriod:   metav1.Duration{Duration: retryPeriod},
 		},
 	}
 	b, err := json.Marshal(config)
